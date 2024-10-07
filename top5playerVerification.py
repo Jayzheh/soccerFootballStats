@@ -6,30 +6,23 @@ from scipy import stats
 def load_data(file_path):
     return pd.read_csv(file_path)
 
-def remove_duplicates(data):
-    duplicates_removed = data.drop_duplicates()
-    return duplicates_removed
-
-def list_missing_values(data):
-    missing_values = data.isnull().sum()
-    missing_values = missing_values[missing_values > 0]
-    return missing_values
-
-def detect_outliers(data):
-    numerical_data = data.select_dtypes(include=['float64', 'int64'])
-    z_scores = np.abs(stats.zscore(numerical_data))
-    outliers = (z_scores > 3).any(axis=1)
-    return data[outliers]
-
 def clean_data(file_path):
     data = load_data(file_path)
     
     # Remove duplicates
-    data_cleaned = remove_duplicates(data)
+    data_cleaned = data.drop_duplicates()
     print(f"Duplicates removed: {len(data) - len(data_cleaned)}")
 
+    # Drop unnecessary columns
+    columns_to_drop = ['Nation', 'Born', 'npxG']
+    data_cleaned = data_cleaned.drop(columns=columns_to_drop)
+
+    # Organize data by position
+    data_cleaned = data_cleaned.sort_values('Pos')
+
     # List Missing Values
-    missing_values = list_missing_values(data_cleaned)
+    missing_values = data_cleaned.isnull().sum()
+    missing_values = missing_values[missing_values > 0]
     if not missing_values.empty:
         print("\nMissing values located at:")
         print(missing_values)
@@ -40,11 +33,17 @@ def clean_data(file_path):
     outliers = detect_outliers(data_cleaned)
     if not outliers.empty:
         print(f"\nOutliers detected in {len(outliers)} rows:")
-        print(outliers)
+        print(outliers[['Player', 'Pos', 'Squad']])  # Print only relevant columns
     else:
         print("\nNo outliers detected.")
 
     return data_cleaned
+
+def detect_outliers(data):
+    numerical_columns = data.select_dtypes(include=['float64', 'int64']).columns
+    z_scores = np.abs(stats.zscore(data[numerical_columns]))
+    outliers = (z_scores > 3).any(axis=1)
+    return data[outliers]
 
 if __name__ == "__main__":
     file_path = 'top5-players.csv'
@@ -53,3 +52,4 @@ if __name__ == "__main__":
     # Save cleaned data to a new CSV file
     cleaned_data.to_csv('cleaned_top5-players.csv', index=False)
     print("\nCleaned data saved to 'cleaned_top5-players.csv'")
+
