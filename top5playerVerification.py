@@ -29,27 +29,28 @@ def clean_data(file_path):
     else:
         print("\nNo missing values found.")
 
-    # Detect Outliers
-    outliers = detect_outliers(data_cleaned)
+    # Detect and Remove Outliers
+    data_cleaned, outliers = remove_outliers(data_cleaned)
     if not outliers.empty:
-        print(f"\nOutliers detected in {len(outliers)} rows:")
+        print(f"\nOutliers detected and removed in {len(outliers)} rows:")
         print(outliers[['Player', 'Pos', 'Squad']])  # Print only relevant columns
     else:
         print("\nNo outliers detected.")
 
     return data_cleaned
 
-def detect_outliers(data):
+def remove_outliers(data):
     numerical_columns = data.select_dtypes(include=['float64', 'int64']).columns
     z_scores = np.abs(stats.zscore(data[numerical_columns]))
     outliers = (z_scores > 3).any(axis=1)
-    return data[outliers]
+    return data[~outliers], data[outliers]
 
 if __name__ == "__main__":
     file_path = 'top5-players.csv'
     cleaned_data = clean_data(file_path)
     
     # Save cleaned data to a new CSV file
-    cleaned_data.to_csv('cleaned_top5-players.csv', index=False)
-    print("\nCleaned data saved to 'cleaned_top5-players.csv'")
+    cleaned_data.to_csv('cleaned_top5-playerV2.csv', index=False)
+    print("\nCleaned data saved to 'cleaned_top5-playerV2.csv'")
+
 
